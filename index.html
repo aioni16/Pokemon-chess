@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pokémon Chess — Ash vs Team Rocket (Pure Chess)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
+  <style>
+    :root{
+      --bg:#071028;
+      --panel:#0b1730;
+      --accent:#9fcaff;
+      --muted:#9db8d9;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#071427);color:#eaf4ff}
+    .wrap{display:flex;gap:18px;max-width:1100px;margin:18px auto;padding:18px}
+    .left{width:620px;background:linear-gradient(180deg,#081226,#061425);padding:16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    .right{flex:1;background:var(--panel);padding:16px;border-radius:12px}
+    h1{margin:0 0 6px 0;font-size:20px}
+    p.lead{margin:6px 0 14px 0;color:var(--muted)}
+    #board{width:580px;margin:auto}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    button{background:#0f2948;border:0;color:var(--accent);padding:8px 12px;border-radius:8px;cursor:pointer}
+    button:hover{filter:brightness(1.08)}
+    .legend{margin-top:12px;color:var(--muted);font-size:13px}
+    .piece-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .piece-item{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,0.02);padding:8px;border-radius:8px}
+    .status{margin-top:12px;color:var(--muted)}
+    footer{margin-top:12px;color:#8aa6d2;font-size:13px}
+    @media (max-width:900px){.wrap{flex-direction:column;padding:10px}.left{width:100%}#board{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="left">
+      <h1>Pokémon Chess — <span style="color:var(--accent)">Ash</span> vs <span style="color:#ffcc77">Team Rocket</span></h1>
+      <p class="lead">Pure chess moves. No special abilities. Playable on iPad. White = Ash, Black = Team Rocket.</p>
+
+      <div id="board" style="margin:10px auto"></div>
+
+      <div class="controls">
+        <button id="newBtn">New Game</button>
+        <button id="flipBtn">Flip Board</button>
+        <button id="undoBtn">Undo</button>
+        <button id="exportBtn">Export FEN</button>
+        <button id="importBtn">Import FEN</button>
+        <input id="fenInput" placeholder="Paste FEN here" style="flex:1;padding:8px;border-radius:8px;border:none;background:#07172b;color:#eaf4ff" />
+      </div>
+
+      <div class="legend">
+        <strong>Piece mapping</strong>
+        <div class="piece-list">
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" width="36" alt="Pikachu"> Pikachu — King (White)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png" width="36" alt="Charizard"> Charizard — Queen (White)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/149.png" width="36" alt="Dragonite"> Dragonite — Rook (White)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/658.png" width="36" alt="Greninja"> Greninja — Bishop (White)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png" width="36" alt="Gengar"> Gengar — Knight (White)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png" width="36" alt="Bulbasaur"> Bulbasaur — Pawns (White)</div>
+
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/52.png" width="36" alt="Meowth"> Meowth — King (Black)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/202.png" width="36" alt="Wobbuffet"> Wobbuffet — Queen (Black)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/24.png" width="36" alt="Arbok"> Arbok — Rook (Black)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/110.png" width="36" alt="Weezing"> Weezing — Bishop (Black)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/439.png" width="36" alt="Mime Jr"> Mime Jr. — Knight (Black)</div>
+          <div class="piece-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/109.png" width="36" alt="Koffing"> Koffing — Pawns (Black)</div>
+        </div>
+        <p class="status" id="status">Ready</p>
+      </div>
+
+      <footer>Tip: Use Export FEN to save a position. Share your Glitch live link to let friends play.</footer>
+    </div>
+
+    <div class="right">
+      <h3 style="margin-top:4px">How this works</h3>
+      <p style="color:#bcd8ff">This page uses chess.js for the game rules (legal moves, check/checkmate, promotions) and chessboard.js for the UI. I've replaced piece graphics with Pokémon artwork (official art from PokéAPI sprites). Moves are standard chess moves only.</p>
+
+      <h4 style="margin-top:10px">Controls & Notes</h4>
+      <ul style="color:#cfe6ff">
+        <li>New Game — resets to standard chess start.</li>
+        <li>Flip Board — rotate the perspective.</li>
+        <li>Undo — step back one half-move (local only).</li>
+        <li>Import/Export FEN — save or load positions.</li>
+      </ul>
+
+      <div style="margin-top:12px;color:#bcd8ff">
+        Want me to add: live online play, promotion visuals, or other piece art? Tell me which and I’ll add it.
+      </div>
+    </div>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+
+  <script>
+    // Image URLs (official-artwork sprites from PokeAPI GitHub)
+    const PICS = {
+      // White = Ash
+      w: {
+        K: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png", // Pikachu
+        Q: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png",  // Charizard
+        R: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/149.png",// Dragonite
+        B: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/658.png",// Greninja
+        N: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png", // Gengar
+        P: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png"   // Bulbasaur (pawns)
+      },
+      // Black = Team Rocket
+      b: {
+        K: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/52.png", // Meowth
+        Q: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/202.png",// Wobbuffet
+        R: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/24.png", // Arbok
+        B: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/110.png",// Weezing
+        N: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/439.png",// Mime Jr.
+        P: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/109.png" // Koffing (pawns)
+      }
+    };
+
+    // chessboard.js pieceTheme mapping
+    function pieceTheme(piece) {
+      // piece is like 'wK' or 'bQ'
+      const color = piece[0];
+      const type = piece[1]; // K,Q,R,B,N,P
+      // If pawns appear of different types, we use P mapping.
+      let url = PICS[color][type] || PICS[color]['P'];
+      // return HTML-compatible path for chessboard.js
+      return url;
+    }
+
+    // Create a chessboard with custom pieceTheme function
+    const boardConfig = {
+      draggable: true,
+      position: 'start',
+      pieceTheme: function(piece) {
+        // chessboard.js accepts a URL string - we'll return an <img> data URL via CSS background technique
+        // but standard approach: return the image path and chessboard will use it.
+        return pieceTheme(piece);
+      },
+      onDragStart: onDragStart,
+      onDrop: onDrop,
+      onSnapEnd: onSnapEnd
+    };
+
+    var board = Chessboard('board', boardConfig);
+    var game = new Chess();
+
+    function onDragStart(source, piece, position, orientation) {
+      if (game.game_over()) return false;
+      // only allow dragging the right color
+      if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+          (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+        return false;
+      }
+    }
+
+    function onDrop(source, target) {
+      // attempt move
+      var move = game.move({from: source, to: target, promotion: 'q'});
+      if (move === null) return 'snapback';
+      updateStatus();
+    }
+
+    function onSnapEnd() {
+      board.position(game.fen());
+    }
+
+    function updateStatus() {
+      var status = '';
+      var moveColor = (game.turn() === 'w') ? 'White (Ash)' : 'Black (Team Rocket)';
+
+      if (game.in_checkmate()) {
+        status = 'Checkmate — ' + moveColor + ' to move (game over).';
+      } else if (game.in_draw()) {
+        status = 'Draw.';
+      } else {
+        status = moveColor + ' to move';
+        if (game.in_check()) {
+          status += ' — CHECK!';
+        }
+      }
+      document.getElementById('status').innerText = status;
+    }
+
+    // buttons
+    document.getElementById('newBtn').addEventListener('click', function(){
+      game.reset();
+      board.start();
+      updateStatus();
+    });
+    document.getElementById('flipBtn').addEventListener('click', function(){ board.flip(); });
+    document.getElementById('undoBtn').addEventListener('click', function(){
+      game.undo();
+      board.position(game.fen());
+      updateStatus();
+    });
+    document.getElementById('exportBtn').addEventListener('click', function(){
+      prompt('Copy this FEN string:', game.fen());
+    });
+    document.getElementById('importBtn').addEventListener('click', function(){
+      var f = document.getElementById('fenInput').value.trim();
+      if(!f){ alert('Paste a FEN string first'); return; }
+      var ok = game.load(f);
+      if(!ok){ alert('Invalid FEN'); return; }
+      board.position(game.fen());
+      updateStatus();
+    });
+
+    // initial
+    updateStatus();
+  </script>
+</body>
+</html>
